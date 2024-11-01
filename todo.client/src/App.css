@@ -9,3 +9,21 @@ th, td {
     padding-left: 1rem;
     padding-right: 1rem;
 }
+.bar-chart {
+    display: flex;
+    align-items: flex-end;
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.bar {
+    width: 200px;
+    color: white;
+    text-align: center;
+    padding: 10px 0;
+    font-weight: bold;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center
+}

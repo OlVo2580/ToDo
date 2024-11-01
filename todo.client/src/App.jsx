@@ -6,6 +6,7 @@ function App() {
     const [editingTaskId, setEditingTaskId] = useState(null);
     const [editingText, setEditingText] = useState('');
     const [draggedTaskId, setDraggedTaskId] = useState(null);
+    const [showCompleted, setShowCompleted] = useState(false);
 
     useEffect(() => {
         const savedTasks = localStorage.getItem('tasks');
@@ -13,18 +14,33 @@ function App() {
             setTasks(JSON.parse(savedTasks));
             console.log("savedTasks parsed:", JSON.parse(savedTasks));
         }
+
+        const handleStorageChange = (event) => {
+            if (event.key === 'tasks') {
+                setTasks(JSON.parse(event.newValue || '[]'));
+            }
+        };
+        window.addEventListener('storage', handleStorageChange);
+
+        return () => {
+            window.removeEventListener('storage', handleStorageChange);
+        };
     }, []);
 
     useEffect(() => {
-        if (tasks.length > 0) {
-            localStorage.setItem('tasks', JSON.stringify(tasks));
-        }
+        localStorage.setItem('tasks', JSON.stringify(tasks));
     }, [tasks]);
 
     const addTask = (task) => {
         if (task.trim()) {
-            setTasks([...tasks, { id: Date.now(), text: task }]);
+            setTasks([...tasks, { id: Date.now(), text: task, completed: false }]);
         }
+    };
+
+    const toggleComplete = (taskId) => {
+        setTasks(tasks.map(task =>
+            task.id === taskId ? { ...task, completed: !task.completed } : task
+        ));
     };
 
     const removeTask = (taskId) => {
@@ -51,6 +67,7 @@ function App() {
         addTask(input.value);
         input.value = '';
     };
+
     const handleDragStart = (taskId) => {
         setDraggedTaskId(taskId);
     };
@@ -70,6 +87,10 @@ function App() {
         setTasks(updatedTasks);
         setDraggedTaskId(null);
     };
+
+    const completedTasks = tasks.filter(task => task.completed).length;
+    const incompleteTasks = tasks.length - completedTasks;
+
     return (
         <div>
             <h1>To-Do List</h1>
@@ -77,15 +98,31 @@ function App() {
                 <input type="text" name="task" placeholder="Enter new task" />
                 <button type="submit">Add Task</button>
             </form>
+            
+            <label>
+                <input 
+                    type="checkbox" 
+                    checked={showCompleted} 
+                    onChange={() => setShowCompleted(!showCompleted)} 
+                />
+                Show completed tasks only
+            </label>
+
             <ul>
-                {tasks.map(task => (
+                {(showCompleted ? tasks.filter(task => task.completed) : tasks).map(task => (
                     <li 
                         key={task.id}
                         draggable 
                         onDragStart={() => handleDragStart(task.id)} 
                         onDragOver={handleDragOver} 
                         onDrop={() => handleDrop(task.id)}
+                        style={{ textDecoration: task.completed ? 'line-through' : 'none' }}
                     >
+                        <input 
+                            type="checkbox" 
+                            checked={task.completed} 
+                            onChange={() => toggleComplete(task.id)} 
+                        />
                         {editingTaskId === task.id ? (
                             <>
                                 <input 
@@ -105,6 +142,16 @@ function App() {
                     </li>
                 ))}
             </ul>
+
+            <h2>Task Completion Status</h2>
+            <div className="bar-chart">
+                <div className="bar" style={{ height: `${completedTasks * 10}px`, backgroundColor: 'green' }}>
+                    Completed: {completedTasks}
+                </div>
+                <div className="bar" style={{ height: `${incompleteTasks * 10}px`, backgroundColor: 'red' }}>
+                    Incomplete: {incompleteTasks}
+                </div>
+            </div>
         </div>
     );
 }
